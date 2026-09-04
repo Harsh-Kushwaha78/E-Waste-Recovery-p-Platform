@@ -1,0 +1,88 @@
+{
+  "modelName": "PriceModel-v1",
+  "modelVersion": "v1",
+  "algorithm": "RandomForestRegressor",
+  "trainedAt": "2026-08-24T19:26:20.191369+00:00",
+  "datasetPath": "demo_prices_v1.csv",
+  "datasetRowCount": 1200,
+  "isDemoData": true,
+  "dataDisclaimer": "DEMO DATA - NOT REAL MARKET DATA. This model was trained on synthetic data for pipeline development. Predictions must not be presented as real market estimates until retrained on real price data.",
+  "features": {
+    "categorical": [
+      "componentType",
+      "brand",
+      "condition",
+      "workingStatus"
+    ],
+    "numeric": [
+      "ageYears",
+      "health"
+    ]
+  },
+  "target": "price",
+  "featureImportances": [
+    {
+      "feature": "componentType_gpu",
+      "importance": 0.3076
+    },
+    {
+      "feature": "workingStatus_NOT_WORKING",
+      "importance": 0.1782
+    },
+    {
+      "feature": "health",
+      "importance": 0.1113
+    },
+    {
+      "feature": "condition_excellent",
+      "importance": 0.0943
+    },
+    {
+      "feature": "condition_poor",
+      "importance": 0.0927
+    },
+    {
+      "feature": "ageYears",
+      "importance": 0.0808
+    },
+    {
+      "feature": "componentType_display",
+      "importance": 0.0352
+    },
+    {
+      "feature": "condition_good",
+      "importance": 0.0303
+    },
+    {
+      "feature": "condition_fair",
+      "importance": 0.0218
+    },
+    {
+      "feature": "brand_Generic",
+      "importance": 0.0164
+    }
+  ],
+  "featureImportanceNote": "Global feature importances from the trained model (not specific to any single prediction). For RandomForest this is scikit-learn's feature_importances_; for LinearRegression it's |coefficient|. Categorical features appear one-hot encoded (e.g. 'componentType_ssd' means the effect of that value specifically).",
+  "metrics": {
+    "baseline_LinearRegression": {
+      "MAE": 449.22,
+      "RMSE": 683.25,
+      "R2": 0.6262
+    },
+    "candidate_RandomForest": {
+      "MAE": 147.97,
+      "RMSE": 249.07,
+      "R2": 0.9503
+    },
+    "selected": {
+      "MAE": 147.97,
+      "RMSE": 249.07,
+      "R2": 0.9503
+    }
+  },
+  "metricDefinitions": {
+    "MAE": "Mean Absolute Error - average absolute difference between predicted and actual price, in the same currency units. Lower is better.",
+    "RMSE": "Root Mean Squared Error - like MAE but penalizes large errors more heavily. Lower is better.",
+    "R2": "R-squared - proportion of price variance explained by the model, from 0 (no better than guessing the mean) to 1 (perfect). Higher is better."
+  }
+}

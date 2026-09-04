@@ -1,0 +1,6 @@
+componentType,brand,model,capacity,condition,workingStatus,price,source,observedDate,notes
+ssd,Samsung,860 EVO,512GB,good,VERIFIED_WORKING,1900,OLX listing,2026-08-15,Second-hand listing average
+ram,Corsair,Vengeance,8GB,excellent,VERIFIED_WORKING,1200,Admin estimate,2026-08-10,Based on local shop quote
+battery,Dell,Original,,fair,LIKELY_WORKING,600,Local repair shop quote,2026-08-01,
+hdd,Seagate,Barracuda,1TB,good,VERIFIED_WORKING,1400,OLX listing,2026-08-12,
+display,Dell,15.6-inch FHD,,good,VERIFIED_WORKING,2800,Admin estimate,2026-08-05,No cracks or dead pixels

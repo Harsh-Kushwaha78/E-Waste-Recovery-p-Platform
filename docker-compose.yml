@@ -1,0 +1,66 @@
+# docker-compose.yml
+#
+# Orchestrates all services for local/production deployment. Not used
+# during day-to-day development (see README "Running locally" for the
+# npm-run-dev workflow) - this is for spinning up the whole stack at
+# once, e.g. for a demo or a real deployment.
+#
+# Usage: docker compose up --build
+
+services:
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      MONGODB_URI: mongodb://mongodb:27017/ewaste
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in your .env file}
+      ML_SERVICE_URL: http://ml-service:8001
+      CV_SERVICE_URL: http://cv-service:8002
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      GENAI_API_KEY: ${GENAI_API_KEY:-}
+      GENAI_MODEL: ${GENAI_MODEL:-claude-3-5-haiku-20241022}
+    depends_on:
+      - mongodb
+      - ml-service
+      - cv-service
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5000}
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+  ml-service:
+    build: ./ml-service
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      ML_SERVICE_PORT: 8001
+
+  cv-service:
+    build: ./cv-service
+    restart: unless-stopped
+    ports:
+      - "8002:8002"
+    environment:
+      CV_SERVICE_PORT: 8002
+
+volumes:
+  mongo-data:
