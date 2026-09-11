@@ -1,6 +1,6 @@
 // frontend/src/components/ImageAnalysis.jsx
 //
-// Lets the user upload a device photo and see DEMO_CV_MODE component
+// Lets the user upload a device photo and see trained YOLO11n component
 // suggestions (bounding boxes drawn as an overlay on the image, at
 // their real relative position/size). Every suggestion requires the
 // user to explicitly click "Add as component" - nothing is
@@ -56,8 +56,11 @@ export default function ImageAnalysis({ deviceId, onComponentAdded }) {
         type: detection.component,
         workingStatus: "NOT_TESTED",
         condition: "unknown",
-        notes: `Suggested by CV demo mode (confidence ${Math.round(detection.confidence * 100)}%) - not a real detection, run a functional test to verify.`,
+        notes: `Suggested by trained YOLO11n model (confidence ${Math.round(
+          detection.confidence * 100
+        )}%). Run a functional test to verify.`,
       });
+
       setAddedTypes((prev) => new Set(prev).add(detection.component));
       onComponentAdded();
     } catch (err) {
@@ -67,7 +70,10 @@ export default function ImageAnalysis({ deviceId, onComponentAdded }) {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-4">
-      <h3 className="font-medium text-slate-800 mb-1">Analyze a photo (optional)</h3>
+      <h3 className="font-medium text-slate-800 mb-1">
+        Analyze a photo (optional)
+      </h3>
+
       <p className="text-xs text-slate-500 mb-3">
         Upload a photo of the open device to get suggested components. This
         speeds up manual entry - it doesn't replace it.
@@ -75,6 +81,7 @@ export default function ImageAnalysis({ deviceId, onComponentAdded }) {
 
       <label className="inline-block bg-slate-700 hover:bg-slate-800 text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer">
         {loading ? "Analyzing..." : "Upload Photo"}
+
         <input
           ref={fileInputRef}
           type="file"
@@ -107,19 +114,29 @@ export default function ImageAnalysis({ deviceId, onComponentAdded }) {
                 alt="Uploaded device"
                 className="block w-full max-w-md"
               />
+
               {result.detections.map((d, i) => (
                 <div
                   key={i}
                   className="absolute border-2 border-blue-500 bg-blue-500/10"
                   style={{
-                    left: `${(d.boundingBox.x / result.imageInfo.width) * 100}%`,
-                    top: `${(d.boundingBox.y / result.imageInfo.height) * 100}%`,
-                    width: `${(d.boundingBox.width / result.imageInfo.width) * 100}%`,
-                    height: `${(d.boundingBox.height / result.imageInfo.height) * 100}%`,
+                    left: `${
+                      (d.boundingBox.x / result.imageInfo.width) * 100
+                    }%`,
+                    top: `${
+                      (d.boundingBox.y / result.imageInfo.height) * 100
+                    }%`,
+                    width: `${
+                      (d.boundingBox.width / result.imageInfo.width) * 100
+                    }%`,
+                    height: `${
+                      (d.boundingBox.height / result.imageInfo.height) * 100
+                    }%`,
                   }}
                 >
                   <span className="absolute -top-5 left-0 bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap">
-                    {TYPE_LABELS[d.component] || d.component} ({Math.round(d.confidence * 100)}%)
+                    {TYPE_LABELS[d.component] || d.component} (
+                    {Math.round(d.confidence * 100)}%)
                   </span>
                 </div>
               ))}
@@ -135,15 +152,18 @@ export default function ImageAnalysis({ deviceId, onComponentAdded }) {
                 <span>
                   {TYPE_LABELS[d.component] || d.component}{" "}
                   <span className="text-slate-400 text-xs">
-                    ({Math.round(d.confidence * 100)}% - demo confidence, not real)
+                    ({Math.round(d.confidence * 100)}% confidence)
                   </span>
                 </span>
+
                 <button
                   onClick={() => handleAddSuggestion(d)}
                   disabled={addedTypes.has(d.component)}
                   className="text-xs bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-medium px-3 py-1.5 rounded-lg"
                 >
-                  {addedTypes.has(d.component) ? "Added" : "Add as component"}
+                  {addedTypes.has(d.component)
+                    ? "Added"
+                    : "Add as component"}
                 </button>
               </div>
             ))}
