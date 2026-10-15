@@ -1,11 +1,3 @@
-// frontend/src/components/ImageAnalysis.jsx
-//
-// Lets the user upload a device photo and see trained YOLO11n component
-// suggestions (bounding boxes drawn as an overlay on the image, at
-// their real relative position/size). Every suggestion requires the
-// user to explicitly click "Add as component" - nothing is
-// auto-created, per the master flow ("user confirms components") and
-// the No Fake AI Rule (never silently trust unverified detections).
 
 import { useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
@@ -20,18 +12,30 @@ const TYPE_LABELS = {
   display: "Display",
 };
 
+const TYPE_ICONS = {
+  ram: "▤",
+  ssd: "▰",
+  battery: "ϟ",
+  motherboard: "▦",
+  display: "▱",
+};
+
 export default function ImageAnalysis({ deviceId, onComponentAdded }) {
   const { token } = useAuth();
   const fileInputRef = useRef(null);
+
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [addingComponent, setAddingComponent] = useState(null);
   const [addedTypes, setAddedTypes] = useState(new Set());
 
   async function handleFileChange(e) {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
+
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
 
     setError(null);
     setResult(null);
@@ -50,7 +54,10 @@ export default function ImageAnalysis({ deviceId, onComponentAdded }) {
     }
   }
 
-  async function handleAddSuggestion(detection) {
+  async function handleAddSuggestion(detection, index) {
+    setError(null);
+    setAddingComponent(index);
+
     try {
       await createComponent(token, deviceId, {
         type: detection.component,
@@ -61,26 +68,68 @@ export default function ImageAnalysis({ deviceId, onComponentAdded }) {
         )}%). Run a functional test to verify.`,
       });
 
-      setAddedTypes((prev) => new Set(prev).add(detection.component));
-      onComponentAdded();
+      setAddedTypes((previous) => new Set(previous).add(index));
+      onComponentAdded?.();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setAddingComponent(null);
     }
   }
 
+  const detections = result?.detections ?? [];
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-4">
-      <h3 className="font-medium text-slate-800 mb-1">
-        Analyze a photo (optional)
-      </h3>
+    <section className="min-w-0 text-emerald-50">
+      {/* Model header */}
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div>
+          <div className="mb-2 flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-lime-300 shadow-[0_0_10px_rgba(163,230,53,0.65)]" />
+            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-lime-200">
+              Vision engine
+            </span>
+          </div>
+          <h3 className="text-xl font-semibold text-white">
+            Component detection
+          </h3>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-emerald-50/45">
+            Upload a device image to find possible reusable parts with your
+            trained computer-vision model.
+          </p>
+        </div>
 
-      <p className="text-xs text-slate-500 mb-3">
-        Upload a photo of the open device to get suggested components. This
-        speeds up manual entry - it doesn't replace it.
-      </p>
+        <span className="shrink-0 rounded-lg border border-lime-300/20 bg-lime-300/[0.06] px-2.5 py-1.5 text-[10px] font-semibold text-lime-200">
+          YOLO11n
+        </span>
+      </div>
 
-      <label className="inline-block bg-slate-700 hover:bg-slate-800 text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer">
-        {loading ? "Analyzing..." : "Upload Photo"}
+      {/* Upload area */}
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={loading}
+        className="group flex w-full flex-col items-center justify-center rounded-2xl border border-dashed border-emerald-100/20 bg-[#0b100d]/80 px-5 py-8 text-center transition hover:border-lime-300/40 hover:bg-lime-300/[0.025] disabled:cursor-wait disabled:opacity-60 sm:py-10"
+      >
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-lime-300/20 bg-lime-300/[0.07] text-2xl text-lime-300 transition group-hover:scale-105">
+          {loading ? "◌" : "↑"}
+        </span>
+
+        <span className="mt-4 text-sm font-semibold text-white">
+          {loading ? "Analyzing image..." : "Upload an image"}
+        </span>
+
+        <span className="mt-2 text-xs leading-5 text-emerald-100/40">
+          {loading
+            ? "The vision model is processing your image."
+            : "JPG, PNG or WebP · Maximum 8 MB"}
+        </span>
+
+        {!loading && (
+          <span className="mt-4 rounded-lg bg-lime-300 px-4 py-2 text-xs font-bold text-[#10170c] transition group-hover:bg-lime-200">
+            Choose image
+          </span>
+        )}
 
         <input
           ref={fileInputRef}
@@ -89,87 +138,228 @@ export default function ImageAnalysis({ deviceId, onComponentAdded }) {
           onChange={handleFileChange}
           disabled={loading}
           className="hidden"
+          aria-label="Choose device image"
         />
-      </label>
+      </button>
 
-      {error && (
-        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3">
-          {error}
-        </p>
-      )}
+      <p className="mt-3 text-center text-[11px] leading-5 text-emerald-100/35">
+        Best results: clear, well-lit photos with components visible and
+        minimal obstruction.
+      </p>
 
-      {result && (
-        <div className="mt-4">
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 mb-3 font-medium">
-            ⚠ {result.disclaimer}
+      {/* Loading status */}
+      {loading && (
+        <div
+          className="mt-5 rounded-xl border border-lime-300/15 bg-lime-300/[0.04] p-4"
+          role="status"
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <span className="text-sm text-white">
+              Running computer vision
+            </span>
+            <span className="animate-pulse text-xs text-lime-300">
+              Processing
+            </span>
           </div>
-
-          {imagePreviewUrl && result.imageInfo && (
-            <div
-              className="relative inline-block mb-3 rounded-lg overflow-hidden border border-slate-200"
-              style={{ maxWidth: "100%" }}
-            >
-              <img
-                src={imagePreviewUrl}
-                alt="Uploaded device"
-                className="block w-full max-w-md"
-              />
-
-              {result.detections.map((d, i) => (
-                <div
-                  key={i}
-                  className="absolute border-2 border-blue-500 bg-blue-500/10"
-                  style={{
-                    left: `${
-                      (d.boundingBox.x / result.imageInfo.width) * 100
-                    }%`,
-                    top: `${
-                      (d.boundingBox.y / result.imageInfo.height) * 100
-                    }%`,
-                    width: `${
-                      (d.boundingBox.width / result.imageInfo.width) * 100
-                    }%`,
-                    height: `${
-                      (d.boundingBox.height / result.imageInfo.height) * 100
-                    }%`,
-                  }}
-                >
-                  <span className="absolute -top-5 left-0 bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap">
-                    {TYPE_LABELS[d.component] || d.component} (
-                    {Math.round(d.confidence * 100)}%)
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="grid gap-2">
-            {result.detections.map((d, i) => (
-              <div
-                key={i}
-                className="flex justify-between items-center bg-slate-50 rounded-lg p-3 text-sm"
-              >
-                <span>
-                  {TYPE_LABELS[d.component] || d.component}{" "}
-                  <span className="text-slate-400 text-xs">
-                    ({Math.round(d.confidence * 100)}% confidence)
-                  </span>
-                </span>
-
-                <button
-                  onClick={() => handleAddSuggestion(d)}
-                  disabled={addedTypes.has(d.component)}
-                  className="text-xs bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-medium px-3 py-1.5 rounded-lg"
-                >
-                  {addedTypes.has(d.component)
-                    ? "Added"
-                    : "Add as component"}
-                </button>
-              </div>
-            ))}
+          <div className="h-1.5 overflow-hidden rounded-full bg-emerald-100/10">
+            <div className="h-full w-2/3 animate-pulse rounded-full bg-gradient-to-r from-emerald-400 to-lime-300" />
           </div>
         </div>
       )}
-    </div>
+
+      {/* Errors */}
+      {error && (
+        <div
+          role="alert"
+          className="mt-4 rounded-xl border border-red-400/20 bg-red-400/[0.05] p-4"
+        >
+          <p className="text-sm font-semibold text-red-300">
+            Analysis or component action failed
+          </p>
+          <p className="mt-1 break-words text-sm text-red-200/70">
+            {error}
+          </p>
+        </div>
+      )}
+
+      {/* Results */}
+      {result && !loading && (
+        <div className="mt-6 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-300">
+                Analysis report
+              </p>
+              <h4 className="mt-1 text-lg font-semibold text-white">
+                {detections.length}{" "}
+                {detections.length === 1 ? "suggestion" : "suggestions"} found
+              </h4>
+            </div>
+
+            <span className="rounded-full border border-emerald-300/15 bg-emerald-300/[0.05] px-3 py-1.5 text-[10px] font-semibold text-emerald-200">
+              {result.mode || "Model response"}
+            </span>
+          </div>
+
+          {result.disclaimer && (
+            <div className="rounded-xl border border-amber-300/15 bg-amber-300/[0.045] p-3">
+              <p className="text-xs leading-5 text-amber-100/75">
+                <span className="mr-1 font-bold text-amber-300">
+                  Important:
+                </span>
+                {result.disclaimer}
+              </p>
+            </div>
+          )}
+
+          {/* Image and bounding boxes */}
+          {imagePreviewUrl && result.imageInfo && (
+            <div className="overflow-hidden rounded-2xl border border-emerald-100/10 bg-[#080b0a]">
+              <div className="flex items-center justify-between gap-3 border-b border-emerald-100/10 px-4 py-3">
+                <span className="text-xs font-semibold text-emerald-50/70">
+                  Detection preview
+                </span>
+                <span className="text-[10px] text-emerald-100/35">
+                  Bounding boxes
+                </span>
+              </div>
+
+              <div className="flex justify-center overflow-hidden p-2 sm:p-4">
+                <div className="relative inline-block max-w-full overflow-hidden rounded-lg">
+                  <img
+                    src={imagePreviewUrl}
+                    alt="Uploaded electronic device with AI detection overlays"
+                    className="block max-h-[440px] max-w-full object-contain"
+                  />
+
+                  {detections.map((d, i) => {
+                    const box = d.boundingBox;
+                    if (!box || !result.imageInfo.width || !result.imageInfo.height) {
+                      return null;
+                    }
+
+                    return (
+                      <div
+                        key={i}
+                        className="pointer-events-none absolute border-2 border-lime-300 bg-lime-300/[0.08]"
+                        style={{
+                          left: `${(box.x / result.imageInfo.width) * 100}%`,
+                          top: `${(box.y / result.imageInfo.height) * 100}%`,
+                          width: `${(box.width / result.imageInfo.width) * 100}%`,
+                          height: `${(box.height / result.imageInfo.height) * 100}%`,
+                        }}
+                      >
+                        <span className="absolute left-0 top-0 -translate-y-full whitespace-nowrap rounded-t-md bg-lime-300 px-1.5 py-1 text-[10px] font-bold text-[#10170c]">
+                          {TYPE_LABELS[d.component] || d.component}{" "}
+                          {Math.round(d.confidence * 100)}%
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Detection list */}
+          {detections.length > 0 ? (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-emerald-100/45">
+                Review suggestions
+              </p>
+
+              {detections.map((d, i) => {
+                const added = addedTypes.has(i);
+                const adding = addingComponent === i;
+                const confidence = Math.round(d.confidence * 100);
+
+                return (
+                  <div
+                    key={i}
+                    className="rounded-xl border border-emerald-100/10 bg-[#0b100d]/80 p-3 sm:p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-lime-300/15 bg-lime-300/[0.06] text-lg text-lime-300">
+                          {TYPE_ICONS[d.component] || "◇"}
+                        </span>
+
+                        <div className="min-w-0">
+                          <p className="break-words text-sm font-semibold text-white">
+                            {TYPE_LABELS[d.component] || d.component}
+                          </p>
+                          <p className="mt-1 text-xs text-emerald-100/40">
+                            Model confidence: {confidence}%
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAddSuggestion(d, i)}
+                        disabled={added || adding || addingComponent !== null}
+                        className={`rounded-lg px-3 py-2 text-xs font-bold transition ${
+                          added
+                            ? "border border-emerald-300/15 bg-emerald-300/[0.06] text-emerald-200"
+                            : "bg-lime-300 text-[#10170c] hover:bg-lime-200 disabled:cursor-not-allowed disabled:opacity-50"
+                        }`}
+                      >
+                        {added
+                          ? "✓ Added"
+                          : adding
+                            ? "Adding..."
+                            : "Confirm component"}
+                      </button>
+                    </div>
+
+                    <div className="mt-3 h-1 overflow-hidden rounded-full bg-emerald-100/10">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-lime-300"
+                        style={{
+                          width: `${Math.min(100, Math.max(0, confidence))}%`,
+                        }}
+                      />
+                    </div>
+
+                    <p className="mt-2 text-[10px] leading-4 text-emerald-100/35">
+                      A detection is a suggestion, not proof that the part
+                      works. Confirm it and run a functional test.
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-emerald-100/10 bg-[#0b100d]/80 p-6 text-center">
+              <p className="text-sm font-semibold text-white">
+                No components detected
+              </p>
+              <p className="mt-2 text-xs leading-5 text-emerald-50/45">
+                Try a clearer image with the components more visible. A
+                missing detection does not mean the device has no reusable
+                parts.
+              </p>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={loading}
+            className="w-full rounded-xl border border-emerald-100/15 px-4 py-3 text-sm font-semibold text-emerald-50/70 transition hover:border-lime-300/30 hover:text-lime-200 disabled:opacity-50"
+          >
+            Analyze another image
+          </button>
+        </div>
+      )}
+
+      <div className="mt-5 border-t border-emerald-100/[0.08] pt-4">
+        <p className="text-[10px] leading-5 text-emerald-100/35">
+          AI-generated detections require human confirmation. Components are
+          added as NOT_TESTED and should undergo functional verification
+          before being listed for sale or used in recovery decisions.
+        </p>
+      </div>
+    </section>
   );
 }
