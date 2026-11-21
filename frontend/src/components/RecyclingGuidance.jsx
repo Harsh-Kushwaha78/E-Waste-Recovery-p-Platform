@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../lib/api";
+import PickupModal from "./PickupModal";
 
 const CATEGORY_LABELS = {
   hazardous: "Hazardous - special handling required",
@@ -9,11 +10,12 @@ const CATEGORY_LABELS = {
   general_recyclable: "General recyclable",
 };
 
-export default function RecyclingGuidance({ componentType }) {
+export default function RecyclingGuidance({ componentType, component = null }) {
   const { token } = useAuth();
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [pickupModalOpen, setPickupModalOpen] = useState(false);
 
   async function handleFetch() {
     setLoading(true);
@@ -29,44 +31,65 @@ export default function RecyclingGuidance({ componentType }) {
   }
 
   return (
-    <div className="mt-3 pt-3 border-t border-slate-100">
-      <button
-        onClick={handleFetch}
-        disabled={loading}
-        className="text-xs text-blue-600 hover:underline font-medium disabled:text-blue-300"
-      >
-        {loading ? "Loading..." : "Recycling guidance"}
-      </button>
+    <div className="mt-3 pt-3 border-t border-white/[0.08]">
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={handleFetch}
+          disabled={loading}
+          className="text-xs text-lime-300 hover:underline font-semibold disabled:text-slate-500"
+        >
+          {loading ? "Loading guidance..." : "♻️ Recycling & drop-off guidance"}
+        </button>
 
-      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+        <button
+          type="button"
+          onClick={() => setPickupModalOpen(true)}
+          className="rounded-lg bg-lime-300/10 border border-lime-300/30 px-2.5 py-1 text-[11px] font-bold text-lime-300 hover:bg-lime-300/20"
+        >
+          🚚 Schedule Doorstep Pickup
+        </button>
+      </div>
+
+      {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
 
       {data && (
-        <div className="mt-2 bg-slate-50 rounded-lg p-3 text-xs">
-          <p className={`font-semibold mb-1 ${data.classification.hazardous ? "text-red-700" : "text-slate-700"}`}>
-            {CATEGORY_LABELS[data.classification.category]}
+        <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs">
+          <p
+            className={`font-semibold mb-1 ${
+              data.classification.hazardous ? "text-amber-300" : "text-emerald-300"
+            }`}
+          >
+            {CATEGORY_LABELS[data.classification.category] || data.classification.category}
           </p>
-          <ul className="list-disc list-inside text-slate-600 mb-2">
+          <ul className="list-disc list-inside text-slate-300 space-y-1 mb-3">
             {data.classification.guidance.map((g, i) => (
               <li key={i}>{g}</li>
             ))}
           </ul>
 
-          {data.localOptions.length > 0 ? (
-            <div>
-              <p className="font-medium text-slate-700 mb-1">Local drop-off points:</p>
+          {data.localOptions?.length > 0 ? (
+            <div className="border-t border-white/[0.06] pt-2">
+              <p className="font-semibold text-slate-300 mb-1">Local physical drop-off points:</p>
               {data.localOptions.map((o) => (
-                <div key={o._id} className="mb-1">
-                  <p className="text-slate-700">{o.recyclerName}</p>
-                  {o.address && <p className="text-slate-400">{o.address}</p>}
-                  {o.contact && <p className="text-slate-400">{o.contact}</p>}
+                <div key={o._id} className="mb-2 last:mb-0 rounded bg-white/[0.02] p-2">
+                  <p className="text-slate-200 font-medium">{o.recyclerName}</p>
+                  {o.address && <p className="text-slate-400 text-[11px]">{o.address}</p>}
+                  {o.contact && <p className="text-slate-400 text-[11px]">Contact: {o.contact}</p>}
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-slate-400 italic">{data.localOptionsNote}</p>
+            <p className="text-slate-400 italic text-[11px]">{data.localOptionsNote}</p>
           )}
         </div>
       )}
+
+      <PickupModal
+        isOpen={pickupModalOpen}
+        onClose={() => setPickupModalOpen(false)}
+        initialComponent={component}
+      />
     </div>
   );
 }

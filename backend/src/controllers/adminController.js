@@ -9,6 +9,8 @@ const Listing = require("../models/Listing");
 const Valuation = require("../models/Valuation");
 const PriceRecord = require("../models/PriceRecord");
 const AuditLog = require("../models/AuditLog");
+const Order = require("../models/Order");
+const PickupRequest = require("../models/PickupRequest");
 const { logEvent } = require("../utils/auditLog");
 
 function isValidId(id) {
@@ -27,6 +29,8 @@ async function getStats(req, res, next) {
       valuationCount,
       priceRecordCount,
       notWorkingCount,
+      orderCount,
+      pickupCount,
     ] = await Promise.all([
       User.countDocuments(),
       Device.countDocuments(),
@@ -36,6 +40,8 @@ async function getStats(req, res, next) {
       Valuation.countDocuments(),
       PriceRecord.countDocuments(),
       Component.countDocuments({ workingStatus: "NOT_WORKING" }),
+      Order.countDocuments(),
+      PickupRequest.countDocuments(),
     ]);
 
     res.status(200).json({
@@ -49,6 +55,8 @@ async function getStats(req, res, next) {
         activeListings: activeListingCount,
         valuationsGenerated: valuationCount,
         priceRecords: priceRecordCount,
+        ordersPlaced: orderCount,
+        pickupRequests: pickupCount,
       },
     });
   } catch (err) {
@@ -141,4 +149,34 @@ async function adminRemoveListing(req, res, next) {
   }
 }
 
-module.exports = { getStats, listUsers, changeUserRole, listAuditLogs, adminRemoveListing };
+// GET /api/admin/orders
+async function adminListOrders(req, res, next) {
+  try {
+    const { status, limit } = req.query;
+    const query = {};
+    if (status) query.status = status;
+
+    const orders = await Order.find(query)
+      .populate({
+        path: "listing",
+        populate: { path: "component", select: "type brand model capacity" },
+      })
+      .populate("buyer", "name email")
+      .populate("seller", "name email")
+      .sort({ createdAt: -1 })
+      .limit(Math.min(Number(limit) || 100, 300));
+
+    res.status(200).json({ status: "ok", count: orders.length, orders });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = {
+  getStats,
+  listUsers,
+  changeUserRole,
+  listAuditLogs,
+  adminRemoveListing,
+  adminListOrders,
+};

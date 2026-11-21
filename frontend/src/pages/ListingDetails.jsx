@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getListing } from "../lib/listings";
 import StatusBadge from "../components/StatusBadge";
+import CheckoutModal from "../components/CheckoutModal";
 
 function DetailRow({ label, value }) {
   if (value == null || value === "") return null;
@@ -20,11 +21,12 @@ function DetailRow({ label, value }) {
 
 export default function ListingDetails() {
   const { id } = useParams();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,7 +73,7 @@ export default function ListingDetails() {
             </div>
           </div>
           <p className="mt-6 text-sm text-slate-500">
-            Loading component detailsâ€¦
+            Loading component details…
           </p>
         </div>
       </main>
@@ -86,7 +88,7 @@ export default function ListingDetails() {
             to="/marketplace"
             className="text-sm text-slate-400 transition hover:text-lime-300"
           >
-            â† Back to marketplace
+            ← Back to marketplace
           </Link>
 
           <section className={`${panel} mt-8 p-7 sm:p-10`}>
@@ -113,6 +115,7 @@ export default function ListingDetails() {
 
   const { listing, latestTest } = data;
   const component = listing.component || {};
+  const isSeller = user?.id === listing.seller?._id || user?.id === listing.seller;
 
   const componentName = [
     component.brand,
@@ -130,35 +133,14 @@ export default function ListingDetails() {
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -right-40 -top-40 h-96 w-96 rounded-full bg-lime-300/[0.06] blur-3xl" />
         <div className="absolute -left-40 top-[45%] h-96 w-96 rounded-full bg-emerald-500/[0.05] blur-3xl" />
-        <div
-          className="absolute inset-0 opacity-[0.035]"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.4) 1px, transparent 1px)",
-            backgroundSize: "44px 44px",
-          }}
-        />
       </div>
 
       <div className="relative mx-auto max-w-4xl px-5 py-7 sm:px-8 sm:py-10">
         {/* Navigation */}
         <header className="mb-9 flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-6">
           <Link to="/" className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-lime-300/25 bg-lime-300/10 text-lime-300">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                className="h-6 w-6"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M7 7.5 9.2 4h5.6L17 7.5M5.2 10l2.1 8h9.4l2.1-8M8 10v5m4-5v5m4-5v5M4 7.5h16"
-                />
-              </svg>
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-lime-300/25 bg-lime-300/10 text-lime-300 font-bold">
+              ⚡
             </span>
             <span>
               <span className="block text-sm font-bold tracking-[0.18em]">
@@ -170,12 +152,20 @@ export default function ListingDetails() {
             </span>
           </Link>
 
-          <Link
-            to="/marketplace"
-            className="text-sm text-slate-400 transition hover:text-lime-300"
-          >
-            â† Marketplace
-          </Link>
+          <div className="flex items-center gap-4 text-xs font-semibold">
+            <Link
+              to="/orders"
+              className="text-slate-400 transition hover:text-lime-300"
+            >
+              My Orders & Pickups
+            </Link>
+            <Link
+              to="/marketplace"
+              className="text-slate-400 transition hover:text-lime-300"
+            >
+              ← Marketplace
+            </Link>
+          </div>
         </header>
 
         {/* Heading */}
@@ -195,13 +185,33 @@ export default function ListingDetails() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-lime-300/20 bg-lime-300/[0.06] p-5 sm:min-w-44">
+            <div className="rounded-2xl border border-lime-300/20 bg-lime-300/[0.06] p-5 sm:min-w-48">
               <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
                 Asking price
               </p>
               <p className="mt-2 text-2xl font-bold text-lime-300">
                 {listing.currency || "INR"} {price}
               </p>
+
+              {listing.status === "active" ? (
+                isSeller ? (
+                  <div className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-center text-xs font-semibold text-amber-200">
+                    Your Listing
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutOpen(true)}
+                    className="mt-3 w-full rounded-xl bg-lime-300 px-4 py-2.5 text-sm font-bold text-black transition hover:bg-lime-200 shadow-lg shadow-lime-300/20"
+                  >
+                    Buy Now
+                  </button>
+                )
+              ) : (
+                <div className="mt-3 rounded-xl border border-slate-500/20 bg-slate-500/10 px-3 py-2 text-center text-xs font-semibold text-slate-400 capitalize">
+                  {listing.status}
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -367,15 +377,27 @@ export default function ListingDetails() {
         </section>
 
         <footer className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.07] pt-5 text-xs text-slate-600">
-          <span>ECYCLE.AI Â· Component recovery marketplace</span>
+          <span>ECYCLE.AI · Component recovery marketplace</span>
           <Link
             to="/marketplace"
             className="text-slate-400 transition hover:text-lime-300"
           >
-            Explore more components â†’
+            Explore more components →
           </Link>
         </footer>
       </div>
+
+      <CheckoutModal
+        isOpen={checkoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        listing={listing}
+        onOrderSuccess={() => {
+          setData((prev) => ({
+            ...prev,
+            listing: { ...prev.listing, status: "sold" },
+          }));
+        }}
+      />
     </main>
   );
 }

@@ -78,15 +78,29 @@ Confirm all four are up: `GET /api/health` should show
     listing - confirm you see the real test evidence (from step 6), not
     just a badge.
 
-14. **Check recycling guidance** on the battery (NOT_WORKING) - confirm
-    it's marked hazardous with safety-conscious guidance (no unsafe
-    instructions).
+14. **Check recycling guidance & schedule doorstep pickup**:
+    - On the battery (NOT_WORKING) - confirm it's marked hazardous with safety-conscious guidance.
+    - Click **"Schedule Doorstep Pickup"**:
+      - Test PIN code serviceability with an unconfigured PIN (e.g. `999999`) -> verify clear honest unavailable message.
+      - Select a serviceable PIN code (e.g. `560001` - Bengaluru) -> verify confirmation.
+      - Select date and time slot, submit request, and verify unique reference ID (e.g. `PCK-...`).
+      - View request in `/orders` under "Recycling Pickups" tab.
 
-15. **As admin**, check `/admin`:
-    - Statistics tab shows non-zero counts matching what you just did
-    - Users tab shows both accounts with correct roles
-    - Audit Log tab shows entries for the price records you added and
-      any CSV import from step 2
+15. **Address Book & Marketplace Checkout**:
+    - Log in as the second user (buyer).
+    - Navigate to `/profile` -> Add a saved delivery address with 6-digit Indian PIN code and 10-digit mobile number.
+    - Browse `/marketplace` -> Click on the SSD listed by the first user.
+    - Click **"Buy Now"** -> verify Checkout Modal loads the saved address, calculates ₹0 delivery fee, and shows total price.
+    - Confirm purchase -> verify listing status transitions to `sold` atomically, order is created with reference ID (`ORD-...`), and shipping address snapshot is preserved.
+    - Try to buy the listing again -> confirm 409 Conflict rejection.
+    - Log in as the first user (seller) -> navigate to `/orders` -> "Sales Fulfillment" -> verify order details and click "Mark as Shipped".
+
+16. **As admin**, check `/admin`:
+    - Statistics tab shows updated counts (active listings, ordersPlaced, pickupRequests).
+    - Pickups tab shows the submitted recycling collection request with address and items -> update status from `Pending` to `Accepted` with an admin note.
+    - Orders tab shows marketplace transaction overview.
+    - Users tab shows accounts with correct roles.
+    - Audit Log tab records order creation, pickup status change, and user actions.
 
 ## What this proves
 

@@ -449,7 +449,41 @@ pretending options exist.
 
 `AuditLog` records key admin-sensitive events: price record
 create/delete, CSV import (with row counts), recycling option creation,
-user role changes, and admin listing removal. Each entry captures who
+user role changes, admin listing removal, order creation/status changes, and pickup lifecycle updates. Each entry captures who
 did what, when, and to what - viewable in the admin dashboard's Audit
 Log tab. A failed audit write never blocks the actual operation it
 describes (logged to console instead, per `backend/src/utils/auditLog.js`).
+
+## Address Management
+
+| Method | Route                   | Auth?         | Purpose                                             |
+|--------|-------------------------|---------------|-----------------------------------------------------|
+| GET    | /api/addresses          | Yes (JWT)     | List saved shipping & pickup addresses for the user |
+| POST   | /api/addresses          | Yes (JWT)     | Add a new address with PIN & phone validation       |
+| GET    | /api/addresses/:id      | Yes (owner)   | Get single address details                          |
+| PUT    | /api/addresses/:id      | Yes (owner)   | Update an existing address                          |
+| DELETE | /api/addresses/:id      | Yes (owner)   | Delete an address (auto-promotes another default)   |
+| PATCH  | /api/addresses/:id/default | Yes (owner) | Set specified address as default                    |
+
+## Marketplace Checkout & Orders
+
+| Method | Route                   | Auth?              | Purpose                                                      |
+|--------|-------------------------|--------------------|--------------------------------------------------------------|
+| POST   | /api/orders             | Yes (buyer)        | Check out a listing: reserves listing, snapshots address     |
+| GET    | /api/orders/mine        | Yes (buyer/seller) | Get purchase history and sales fulfillment queue             |
+| GET    | /api/orders/:id         | Yes (participant)  | View detailed order status and immutable shipping snapshot   |
+| PATCH  | /api/orders/:id/status  | Yes (participant)  | Update status (e.g. buyer cancel, seller ship/deliver)       |
+
+## Recycling Doorstep Pickup
+
+| Method | Route                         | Auth?         | Purpose                                                 |
+|--------|-------------------------------|---------------|---------------------------------------------------------|
+| GET    | /api/recycling/serviceability | Yes (JWT)     | Check 6-digit Indian PIN code serviceability            |
+| POST   | /api/recycling/pickups        | Yes (JWT)     | Schedule doorstep pickup with address & date/slot       |
+| GET    | /api/recycling/pickups/mine   | Yes (JWT)     | List current and historical pickup requests             |
+| GET    | /api/recycling/pickups/:id    | Yes (owner/admin) | Get detailed status and valuation snapshot          |
+| PATCH  | /api/recycling/pickups/:id/cancel | Yes (owner) | Cancel a pending or accepted pickup request         |
+| GET    | /api/admin/pickups            | Yes (admin)   | Admin oversight of all collection requests              |
+| PATCH  | /api/admin/pickups/:id/status | Yes (admin)   | Update pickup logistics status with administrative note |
+| GET    | /api/admin/orders             | Yes (admin)   | Admin oversight of all marketplace orders               |
+
