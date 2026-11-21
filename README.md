@@ -354,10 +354,12 @@ cd backend
 npm test
 ```
 
-Runs 25 automated unit tests (Node's built-in test runner, no extra
+Runs 45 automated unit tests (Node's built-in test runner, no extra
 dependency) covering all pure/logic functions - status derivation, CSV
 validation, recycling classification, scrap value estimation, price
-explanations, chatbot prompt construction, and market data aggregation.
+explanations, chatbot prompt construction, market data aggregation,
+Indian phone & PIN validation, checkout pricing, immutable address snapshotting,
+PIN serviceability, and order/pickup status transitions.
 See `docs/testing.md` for full coverage details and honest limitations.
 
 ## Documentation

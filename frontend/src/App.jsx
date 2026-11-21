@@ -1,9 +1,8 @@
 // frontend/src/App.jsx
 //
-// Phase 1: adds routing on top of the Phase 0 health check.
-// "/" stays the system health check (useful for quick debugging).
-// "/register", "/login", "/dashboard" (protected), "/profile" (protected)
-// are the new auth flow added in Phase 1.
+// Root application component.
+// "/" provides the cinematic 3D e-waste recovery hero experience and live system health.
+// All application routes (/login, /register, /dashboard, /devices, /marketplace, /orders, /admin, etc.) are mounted here.
 
 import { useEffect, useState } from "react";
 import { Routes, Route, Link } from "react-router-dom";
@@ -19,11 +18,12 @@ import Marketplace from "./pages/Marketplace";
 import ListingDetails from "./pages/ListingDetails";
 import MyListings from "./pages/MyListings";
 import AdminDashboard from "./pages/AdminDashboard";
+import Orders from "./pages/Orders";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Hero3D from "./components/hero3d/Hero3D";
 import { API_BASE_URL } from "./lib/api";
 
-
-function HealthCheck() {
+function LandingPage() {
   const [health, setHealth] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -43,12 +43,12 @@ function HealthCheck() {
     ? [
         {
           name: "Backend API",
-          detail: "Express service",
+          detail: "Express REST engine",
           ok: health.status === "ok",
         },
         {
           name: "MongoDB",
-          detail: "Database",
+          detail: "Database persistence",
           ok: Boolean(health.database?.connected),
         },
         {
@@ -60,7 +60,7 @@ function HealthCheck() {
         },
         {
           name: "Computer Vision",
-          detail: health.cvService?.mode || "Image detection service",
+          detail: health.cvService?.mode || "YOLO11n component detection",
           ok: Boolean(health.cvService?.reachable),
         },
       ]
@@ -70,98 +70,85 @@ function HealthCheck() {
     services.length > 0 && services.every((service) => service.ok);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#080b0a] px-5 py-8 text-emerald-50 sm:px-8 sm:py-12">
-      {/* Background effects */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_15%_10%,rgba(52,211,153,0.12),transparent_35%),radial-gradient(ellipse_at_90%_80%,rgba(163,230,53,0.08),transparent_35%)]" />
-
-      <div className="pointer-events-none absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(163,230,53,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(163,230,53,0.06)_1px,transparent_1px)] [background-size:42px_42px]" />
-
-      <div className="relative mx-auto flex min-h-[80vh] max-w-6xl flex-col">
-        {/* Header */}
-        <header className="flex items-center justify-between gap-4 border-b border-emerald-100/10 pb-6">
+    <main className="relative min-h-screen bg-[#080b0a] text-emerald-50">
+      {/* Top Application Header */}
+      <header className="sticky top-0 z-40 w-full border-b border-emerald-100/10 bg-[#080b0a]/85 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8 lg:px-12">
           <Link
             to="/"
-            className="flex items-center gap-3 text-emerald-50 no-underline hover:text-lime-300"
+            className="flex items-center gap-3 text-emerald-50 no-underline hover:text-lime-300 transition"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-lime-300/25 bg-lime-300/10 text-2xl text-lime-300">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-lime-300/25 bg-lime-300/10 text-xl text-lime-300">
               ♻
             </div>
-
             <div>
-              <p className="m-0 text-base font-bold tracking-wide">
+              <p className="m-0 text-sm font-bold tracking-wide">
                 ECYCLE<span className="text-lime-300">.AI</span>
               </p>
-              <p className="m-0 mt-1 text-[10px] uppercase tracking-[0.22em] text-emerald-100/45">
+              <p className="m-0 text-[9px] uppercase tracking-[0.22em] text-emerald-100/45">
                 Recovery intelligence
               </p>
             </div>
           </Link>
 
-          <span className="hidden items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-300/5 px-3 py-2 text-xs text-emerald-100/70 sm:inline-flex">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            LOCAL ENVIRONMENT
-          </span>
-        </header>
+          {/* Navigation links */}
+          <nav className="flex items-center gap-3 sm:gap-6 text-xs font-semibold">
+            <Link
+              to="/marketplace"
+              className="hidden sm:inline text-slate-300 hover:text-lime-300 transition"
+            >
+              Marketplace
+            </Link>
+            <Link
+              to="/devices"
+              className="hidden sm:inline text-slate-300 hover:text-lime-300 transition"
+            >
+              My Devices
+            </Link>
+            <Link
+              to="/orders"
+              className="hidden md:inline text-slate-300 hover:text-lime-300 transition"
+            >
+              Orders & Pickups
+            </Link>
+            <Link
+              to="/login"
+              className="text-slate-300 hover:text-white transition px-2 py-1"
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/register"
+              className="rounded-xl bg-lime-300/10 border border-lime-300/30 px-3.5 py-1.5 font-bold text-lime-300 transition hover:bg-lime-300 hover:text-black"
+            >
+              Get Started
+            </Link>
+          </nav>
+        </div>
+      </header>
 
-        {/* Main content */}
-        <section className="grid flex-1 items-center gap-10 py-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
-          <div className="animate-fade-up">
-            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-lime-300/20 bg-lime-300/5 px-3 py-1.5 text-xs font-medium tracking-wide text-lime-200">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-lime-300" />
-              AI-POWERED CIRCULAR ECONOMY
-            </p>
+      {/* 3D Hero Experience */}
+      <Hero3D />
 
-            <h1 className="max-w-xl text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-6xl">
-              Waste less.
-              <br />
-              <span className="bg-gradient-to-r from-lime-200 via-lime-400 to-emerald-400 bg-clip-text text-transparent">
-                Recover more.
-              </span>
-            </h1>
-
-            <p className="mt-6 max-w-lg text-sm leading-7 text-emerald-50/55 sm:text-base">
-              Identify electronic components, verify their condition,
-              estimate recoverable value, and make smarter reuse and
-              recycling decisions.
-            </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                to="/login"
-                className="inline-flex items-center gap-2 rounded-xl bg-lime-300 px-5 py-3 text-sm font-bold text-[#10170c] no-underline shadow-[0_0_30px_rgba(163,230,53,0.12)] hover:-translate-y-0.5 hover:bg-lime-200"
-              >
-                Enter platform <span aria-hidden="true">→</span>
-              </Link>
-
-              <Link
-                to="/register"
-                className="inline-flex items-center rounded-xl border border-emerald-100/15 bg-white/[0.03] px-5 py-3 text-sm font-semibold text-emerald-50 no-underline hover:border-lime-300/30 hover:bg-white/[0.06]"
-              >
-                Create account
-              </Link>
+      {/* Live Service Health & Architecture Overview */}
+      <section className="relative z-10 border-t border-white/[0.08] bg-[#0c120f]/90 py-16 px-5 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div>
+              <p className="text-xs font-mono font-semibold uppercase tracking-widest text-lime-300">
+                SYSTEM DIAGNOSTICS & STATUS
+              </p>
+              <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                Microservice Architecture & Live Health
+              </h2>
+              <p className="mt-2 text-sm text-slate-400 max-w-xl">
+                Real-time operational status for all components running in the local ecosystem.
+              </p>
             </div>
 
-            <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-xs text-emerald-50/45">
-              <span>01 / Detect components</span>
-              <span>02 / Estimate value</span>
-              <span>03 / Recover resources</span>
-            </div>
-          </div>
-
-          {/* Live service health */}
-          <div className="animate-fade-up rounded-2xl border border-emerald-100/10 bg-[#101713]/90 p-5 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-7">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100/45">
-                  System overview
-                </p>
-                <h2 className="mt-2 text-xl font-semibold text-white">
-                  Service health
-                </h2>
-              </div>
-
+            <div className="flex items-center gap-3">
               <span
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
+                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium ${
                   loading
                     ? "border-amber-300/20 bg-amber-300/5 text-amber-200"
                     : error || !allHealthy
@@ -169,117 +156,102 @@ function HealthCheck() {
                       : "border-emerald-300/20 bg-emerald-300/5 text-emerald-200"
                 }`}
               >
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    loading
+                      ? "bg-amber-400 animate-pulse"
+                      : error || !allHealthy
+                        ? "bg-amber-400"
+                        : "bg-emerald-400"
+                  }`}
+                />
                 {loading
-                  ? "Checking..."
+                  ? "Verifying services..."
                   : error
-                    ? "Connection error"
+                    ? "Backend offline"
                     : allHealthy
-                      ? "All systems ready"
+                      ? "All microservices active"
                       : "Partial availability"}
               </span>
             </div>
+          </div>
 
-            {loading && (
-              <p className="mt-6 rounded-xl border border-emerald-100/10 bg-white/[0.02] p-4 text-sm text-emerald-50/60">
-                Connecting to platform services...
-              </p>
-            )}
+          {/* Service Health Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {loading &&
+              [1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 animate-pulse h-28"
+                />
+              ))}
 
-            {error && (
-              <div
-                role="alert"
-                className="mt-6 rounded-xl border border-red-400/20 bg-red-400/5 p-4 text-sm text-red-200"
-              >
-                <p className="font-semibold">Backend unavailable</p>
-                <p className="mt-2 break-words text-red-100/70">{error}</p>
-                <p className="mt-2 text-xs text-red-100/60">
-                  Check that the backend is running at {API_BASE_URL}.
-                </p>
-              </div>
-            )}
-
-            {health && (
-              <div className="mt-6 space-y-3">
-                {services.map((service) => (
-                  <div
-                    key={service.name}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-emerald-100/[0.07] bg-white/[0.025] p-4"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-emerald-50/90">
-                        {service.name}
-                      </p>
-                      <p className="mt-1 text-xs text-emerald-50/40">
-                        {service.detail}
-                      </p>
-                    </div>
-
+            {!loading &&
+              services.map((service) => (
+                <div
+                  key={service.name}
+                  className="rounded-xl border border-white/[0.08] bg-[#121c17]/70 p-5 shadow-lg backdrop-blur-sm"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-white">{service.name}</p>
                     <span
-                      className={`inline-flex shrink-0 items-center gap-2 text-xs font-semibold ${
-                        service.ok ? "text-emerald-300" : "text-amber-300"
+                      className={`inline-flex items-center gap-1.5 text-[11px] font-bold ${
+                        service.ok ? "text-emerald-400" : "text-amber-400"
                       }`}
                     >
                       <span
-                        className={`h-2 w-2 rounded-full ${
+                        className={`h-1.5 w-1.5 rounded-full ${
                           service.ok ? "bg-emerald-400" : "bg-amber-400"
                         }`}
                       />
                       {service.ok ? "Online" : "Offline"}
                     </span>
                   </div>
-                ))}
-              </div>
-            )}
-
-            <div className="mt-5 border-t border-emerald-100/10 pt-4">
-              {health?.database?.note && (
-                <p className="text-xs leading-5 text-emerald-50/40">
-                  {health.database.note}
-                </p>
-              )}
-
-              {health?.timestamp && (
-                <p className="mt-2 text-[11px] text-emerald-50/30">
-                  Last checked: {new Date(health.timestamp).toLocaleString()}
-                </p>
-              )}
-
-              {health?.mlService?.isDemoData && (
-                <p className="mt-3 rounded-lg border border-amber-300/15 bg-amber-300/5 p-3 text-xs leading-5 text-amber-200/80">
-                  Valuation uses synthetic demo data. Predictions are not
-                  verified market prices.
-                </p>
-              )}
-            </div>
+                  <p className="mt-2 text-xs text-slate-400">{service.detail}</p>
+                </div>
+              ))}
           </div>
-        </section>
 
-        {/* Footer */}
-        <footer className="flex flex-col justify-between gap-2 border-t border-emerald-100/10 pt-5 text-xs text-emerald-50/35 sm:flex-row">
-          <span>ECYCLE.AI · Electronic resource recovery</span>
-          <span>Component intelligence for a circular future</span>
-        </footer>
-      </div>
+          {/* Diagnostic Notes */}
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/[0.06] pt-4 text-xs text-slate-500">
+            {health?.database?.note && <span>Database note: {health.database.note}</span>}
+            {health?.timestamp && (
+              <span>Last ping: {new Date(health.timestamp).toLocaleTimeString()}</span>
+            )}
+            {health?.mlService?.isDemoData && (
+              <span className="text-amber-300/80">
+                Notice: ML uses calibrated demo dataset for local evaluation.
+              </span>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-white/[0.08] bg-[#080b0a] py-8 text-xs text-slate-500 px-5 sm:px-8 lg:px-12">
+        <div className="mx-auto flex max-w-7xl flex-col sm:flex-row items-center justify-between gap-4">
+          <p>© ECYCLE.AI · Intelligent Circular Hardware Recovery & Reclaim</p>
+          <div className="flex items-center gap-6">
+            <Link to="/marketplace" className="hover:text-lime-300 transition">
+              Marketplace
+            </Link>
+            <Link to="/devices" className="hover:text-lime-300 transition">
+              Diagnostics
+            </Link>
+            <Link to="/orders" className="hover:text-lime-300 transition">
+              Pickups
+            </Link>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
 
-function StatusRow({ label, ok, okText, badText = "Down" }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span>{label}</span>
-      <span className={ok ? "text-emerald-300" : "text-amber-300"}>
-        {ok ? okText : badText}
-      </span>
-    </div>
-  );
-}
-
-
-function App() {
+export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<HealthCheck />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
       <Route
@@ -362,8 +334,14 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/orders"
+        element={
+          <ProtectedRoute>
+            <Orders />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }
-
-export default App;

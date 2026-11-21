@@ -20,6 +20,8 @@ const chatRoutes = require("./routes/chat");
 const listingsRoutes = require("./routes/listings");
 const recyclingRoutes = require("./routes/recycling");
 const adminRoutes = require("./routes/admin");
+const addressesRoutes = require("./routes/addresses");
+const ordersRoutes = require("./routes/orders");
 
 function createApp() {
   const app = express();
@@ -62,6 +64,8 @@ function createApp() {
   app.use("/api/listings", listingsRoutes);
   app.use("/api/recycling", recyclingRoutes);
   app.use("/api/admin", adminRoutes);
+  app.use("/api/addresses", addressesRoutes);
+  app.use("/api/orders", ordersRoutes);
 
   // Future phases will mount more routers here, e.g.:
   // app.use("/api/models", require("./routes/models"));

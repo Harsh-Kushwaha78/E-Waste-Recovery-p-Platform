@@ -9,7 +9,12 @@ const {
   changeUserRole,
   listAuditLogs,
   adminRemoveListing,
+  adminListOrders,
 } = require("../controllers/adminController");
+const {
+  adminListPickups,
+  adminUpdatePickupStatus,
+} = require("../controllers/pickupController");
 
 const router = express.Router();
 
@@ -20,5 +25,10 @@ router.get("/users", listUsers);
 router.put("/users/:id/role", changeUserRole);
 router.get("/audit-logs", listAuditLogs);
 router.delete("/listings/:id", adminRemoveListing);
+
+// Admin order and pickup management
+router.get("/orders", adminListOrders);
+router.get("/pickups", adminListPickups);
+router.patch("/pickups/:id/status", adminUpdatePickupStatus);
 
 module.exports = router;

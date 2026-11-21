@@ -74,6 +74,12 @@ export default function Dashboard() {
             >
               Marketplace
             </Link>
+            <Link
+              to="/orders"
+              className="text-emerald-50/65 no-underline hover:text-lime-300"
+            >
+              Orders & Pickups
+            </Link>
             {user?.role === "admin" && (
               <Link
                 to="/admin"
